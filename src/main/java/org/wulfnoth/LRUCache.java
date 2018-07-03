@@ -1,18 +1,22 @@
 package org.wulfnoth;
 
+import com.sun.scenario.effect.impl.sw.sse.SSEBlend_SRC_OUTPeer;
+
 import java.util.HashMap;
 
-class LRUCache {
+public class LRUCache {
 
 	private static int id = 0;
 
 	class Node {
 		int timestamp;
 		int key;
+		int value;
 		int position;
 
-		Node(int key) {
+		Node(int key, int value) {
 			this.key = key;
+			this.value = value;
 			updateTimestamp();
 		}
 
@@ -20,43 +24,107 @@ class LRUCache {
 			this.timestamp = id++;
 		}
 
-		@Override
-		public int hashCode() {
-			return key;
-		}
 	}
 
-	int size = 0;
 	Node[] heap; //minimum heap
 
-	HashMap<Integer, Integer> cache = new HashMap<>();
-	HashMap<Integer, Node> map = new HashMap<>();
+	HashMap<Integer, Node> cache = new HashMap<>();
 
 	public LRUCache(int capacity) {
 		heap = new Node[capacity];
 	}
 
 	public int get(int key) {
-		int v = cache.getOrDefault(key, -1);
-		if (v != -1) {
-			Node node = map.get(key);
+		Node v = cache.get(key);
+		if (v != null) {
+			Node node = cache.get(key);
 			node.updateTimestamp();
 			downcast(node);
+			return v.value;
 		}
-		return v;
+		return -1;
 	}
 
-	public void downcast(Node node) {
+	private void downcast(Node node) {
+		if (node.position * 2 + 1 < cache.size()) { //left child is existed
+			Node leftNode = heap[node.position * 2 + 1];
+			if (leftNode.timestamp < node.timestamp) { //downcast
+				swap(node.position, leftNode.position);
+				downcast(node);
+			} else if (node.position*2 + 2 < cache.size()){
+				Node rightNode = heap[node.position*2 + 2];
+				if (rightNode.timestamp < node.timestamp) {
+					swap(node.position, rightNode.position);
+					downcast(node);
+				}
+			}
+		}
+	}
 
+	private void swap(int first, int second) {
+		Node tmp = heap[first];
+		heap[first] = heap[second];
+		heap[second] = tmp;
+		heap[first].position = first;
+		heap[second].position = second;
 	}
 
 	public void put(int key, int value) {
-		if(map.containsKey(key)) {
-			Node node = map.get(key);
-			node.updateTimestamp();
-			downcast(node);
-			cache.put(key, value);
+		if (heap.length != 0) {
+			if(cache.containsKey(key)) {
+				Node node = cache.get(key);
+				node.updateTimestamp();
+				downcast(node);
+				node.value = value;
+			} else if(cache.size() < heap.length) {
+				Node node = new Node(key, value);
+				node.position = cache.size();
+				heap[cache.size()] = node;
+				cache.put(key, node);
+			} else {
+				Node node = new Node(key, value);
+				node.position = 0;
+				cache.put(key, node);
+				cache.remove(heap[0].key);
+				heap[0] = node;
+				downcast(node);
+			}
 		}
 	}
+
+	public static void main(String[] args) {
+		LRUCache cache = new LRUCache( 2 /* capacity */ );
+
+		cache.put(1, 1);
+		cache.put(2, 2);
+		System.out.println(cache.get(1)); //1
+		cache.put(3, 3);    // evicts key 2
+		System.out.println(cache.get(2)); // returns -1 (not found)
+		cache.put(4, 4);    // evicts key 1
+		System.out.println(cache.get(1));// returns -1 (not found)
+		System.out.println(cache.get(3));// returns 3
+		System.out.println(cache.get(4));// returns 4
+		System.out.println(cache.get(2));
+	}
+
+	//[
+	//      null,null,null,null,null,null,-1,null,19,17,null,-1,null,null,null,-1,null,-1,5,-1,12,
+	//      null,null,3,5,5,null,null,1,null,-1,null,30,5,30,null,null,null,-1,null,-1,24,null,
+	//      null,18,null,null,null,null,14,null,null,18,null,null,-1,null,null,null,null,null,18,
+	//      null,null,24,null,4,29,30,null,12,-1,null,null,null,null,29,null,null,null,null,-1,-1,
+	//      18,null,null,null,24,null,null,null,20,null,null,null,-1,18,18,null,null,null,null,20,
+	//      null,null,null,null,null,null,null
+	// ]
+
+
+
+	//[
+	//      null,null,null,null,null,null,-1,null,19,17,null,-1,null,null,null,-1,null,-1,5,-1,12,
+	//      null,null,3,5,5,null,null,1,null,-1,null,30,5,30,null,null,null,-1,null,-1,24,null,null,
+	//      18,null,null,null,null,-1,null,null,18,null,null,-1,null,null,null,null,null,18,null,null,
+	//      -1,null,4,29,30,null,12,-1,null,null,null,null,29,null,null,null,null,17,22,18,null,null,
+	//      null,-1,null,null,null,20,null,null,null,-1,18,18,null,null,null,null,20,null,null,null,null,
+	//      null,null,null
+	// ]
 
 }

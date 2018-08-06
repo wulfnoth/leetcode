@@ -1,6 +1,5 @@
 package org.wulfnoth;
 
-import java.util.ArrayList;
 import java.util.Stack;
 
 public class BasicCaculator {
@@ -48,7 +47,7 @@ class Solution {
 		}
 	}
 
-	class List {
+	class CalList {
 
 		Node head;
 		Node tail;
@@ -99,7 +98,7 @@ class Solution {
 
 	public int calculate(String s) {
 		Stack<Character> stack = new Stack<>();
-		List list = new List();
+		CalList list = new CalList();
 		boolean isRightParenthesis = false;
 
 		int i = 0;

@@ -7,12 +7,49 @@ import java.util.PriorityQueue;
 
 public class WordLadderII {
 
+	private class Heap {
+
+		int size = 0;
+		ArrayList<Node> data = new ArrayList<>();
+		HashMap<Node, Integer> positionMap = new HashMap<>();
+
+		boolean notEmpty() {
+			return size != 0;
+		}
+
+		Node take() {
+			if (notEmpty()) {
+				Node result = data.get(0);
+				positionMap.remove(result);
+				size--;
+				//
+				return result;
+			} else
+				return null;
+		}
+
+		void offer(Node elem) {
+			if (size <= data.size()) {
+				data.add(elem);
+			} else {
+				data.set(size, elem);
+			}
+			size++;
+			cast(size);
+		}
+
+		void cast(int pos) {
+
+		}
+
+	}
+
 	private class Node implements Comparable<Node> {
 		String word;
 		int distance;
 		int id;
-		List<Integer> last = null;
-		List<Node> neighbor = null;
+		List<Integer> last;
+		List<Node> neighbor;
 
 		Node(int id, int distance, String word) {
 			this.word = word;
@@ -41,6 +78,17 @@ public class WordLadderII {
 		@Override
 		public int compareTo(Node o) {
 			return distance - o.distance;
+		}
+
+		@Override
+		public boolean equals(Object obj) {
+			Node other = (Node)obj;
+			return id == other.id;
+		}
+
+		@Override
+		public int hashCode() {
+			return Integer.hashCode(id);
 		}
 	}
 

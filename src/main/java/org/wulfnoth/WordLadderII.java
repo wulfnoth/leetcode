@@ -1,9 +1,6 @@
 package org.wulfnoth;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.PriorityQueue;
+import java.util.*;
 
 public class WordLadderII {
 
@@ -11,7 +8,7 @@ public class WordLadderII {
 
 		int size = 0;
 		ArrayList<Node> data = new ArrayList<>();
-		HashMap<Node, Integer> positionMap = new HashMap<>();
+		HashMap<Integer, Integer> positionMap = new HashMap<>();
 
 		boolean notEmpty() {
 			return size != 0;
@@ -20,7 +17,7 @@ public class WordLadderII {
 		Node take() {
 			if (notEmpty()) {
 				Node result = data.get(0);
-				positionMap.remove(result);
+				positionMap.remove(result.id);
 				size--;
 				//
 				return result;
@@ -35,12 +32,42 @@ public class WordLadderII {
 				data.set(size, elem);
 			}
 			size++;
-			cast(size);
+			upCast(size);
 		}
 
-		void cast(int pos) {
-
+		void upCast(int pos) {
+			if (pos != 0) {
+				int parentPos = (pos-1)/2;
+				if (data.get(parentPos).compareTo(data.get(pos)) > 0) {
+					Collections.swap(data, parentPos, pos);
+					positionMap.put(data.get(parentPos).id, parentPos);
+					positionMap.put(data.get(pos).id, pos);
+					upCast(parentPos);
+				}
+			}
 		}
+
+		void downCast(int pos) {
+			int leftPos = pos*2 + 1;
+			int rightPos = pos*2 + 2;
+			int targetPos = -1;
+			int targetDistance = data.get(pos).distance;
+			if (leftPos < size) {
+				if (targetDistance > data.get(leftPos).distance) {
+					targetDistance = data.get(leftPos).distance;
+					targetPos = leftPos;
+				}
+				if (rightPos < size && targetDistance > data.get(rightPos).distance)
+					targetPos = rightPos;
+			}
+			if (targetPos != -1) {
+				Collections.swap(data, pos, targetPos);
+				positionMap.put(data.get(targetPos).id, targetPos);
+				positionMap.put(data.get(pos).id, pos);
+				downCast(targetPos);
+			}
+		}
+
 
 	}
 

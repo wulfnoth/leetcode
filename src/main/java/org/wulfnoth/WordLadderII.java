@@ -8,21 +8,18 @@ public class WordLadderII {
 
 		int size = 0;
 		ArrayList<Node> data = new ArrayList<>();
-		HashMap<Integer, Integer> positionMap = new HashMap<>();
+		HashMap<Integer, Integer> idToPosition = new HashMap<>();
 
 		boolean notEmpty() {
 			return size != 0;
 		}
 
+		void update() {
+
+		}
+
 		Node take() {
-			if (notEmpty()) {
-				Node result = data.get(0);
-				positionMap.remove(result.id);
-				size--;
-				//
-				return result;
-			} else
-				return null;
+			return null;
 		}
 
 		void offer(Node elem) {
@@ -31,6 +28,7 @@ public class WordLadderII {
 			} else {
 				data.set(size, elem);
 			}
+			idToPosition.put(elem.id, size);
 			size++;
 			upCast(size);
 		}
@@ -40,8 +38,8 @@ public class WordLadderII {
 				int parentPos = (pos-1)/2;
 				if (data.get(parentPos).compareTo(data.get(pos)) > 0) {
 					Collections.swap(data, parentPos, pos);
-					positionMap.put(data.get(parentPos).id, parentPos);
-					positionMap.put(data.get(pos).id, pos);
+					idToPosition.put(data.get(parentPos).id, parentPos);
+					idToPosition.put(data.get(pos).id, pos);
 					upCast(parentPos);
 				}
 			}
@@ -62,8 +60,8 @@ public class WordLadderII {
 			}
 			if (targetPos != -1) {
 				Collections.swap(data, pos, targetPos);
-				positionMap.put(data.get(targetPos).id, targetPos);
-				positionMap.put(data.get(pos).id, pos);
+				idToPosition.put(data.get(targetPos).id, targetPos);
+				idToPosition.put(data.get(pos).id, pos);
 				downCast(targetPos);
 			}
 		}

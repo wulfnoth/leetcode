@@ -6,37 +6,51 @@ public class WordLadderII {
 
 	private class Heap {
 
-		int size = 0;
+		int cursor = 0;
 		ArrayList<Node> data = new ArrayList<>();
 		HashMap<Integer, Integer> idToPosition = new HashMap<>();
 
 		boolean notEmpty() {
-			return size != 0;
+			return cursor != 0;
 		}
 
-		void update() {
-
+		void update(Node node) {
+			if (idToPosition.containsKey(node.id)) {
+				upCast(idToPosition.get(node.id));
+			} else {
+				offer(node);
+			}
 		}
 
 		Node take() {
+			if (notEmpty()) {
+				Node result = data.get(0);
+				idToPosition.remove(result.id);
+				cursor--;
+				if (notEmpty()) {
+					data.set(0, data.get(cursor));
+					downCast(0);
+				}
+				return result;
+			}
 			return null;
 		}
 
-		void offer(Node elem) {
-			if (size <= data.size()) {
+		private void offer(Node elem) {
+			if (cursor == data.size()) {
 				data.add(elem);
 			} else {
-				data.set(size, elem);
+				data.set(cursor, elem);
 			}
-			idToPosition.put(elem.id, size);
-			size++;
-			upCast(size);
+			idToPosition.put(elem.id, cursor);
+			cursor++;
+			upCast(cursor -1);
 		}
 
 		void upCast(int pos) {
 			if (pos != 0) {
 				int parentPos = (pos-1)/2;
-				if (data.get(parentPos).compareTo(data.get(pos)) > 0) {
+				if (data.get(parentPos).distance > data.get(pos).distance) {
 					Collections.swap(data, parentPos, pos);
 					idToPosition.put(data.get(parentPos).id, parentPos);
 					idToPosition.put(data.get(pos).id, pos);
@@ -50,12 +64,12 @@ public class WordLadderII {
 			int rightPos = pos*2 + 2;
 			int targetPos = -1;
 			int targetDistance = data.get(pos).distance;
-			if (leftPos < size) {
+			if (leftPos < cursor) {
 				if (targetDistance > data.get(leftPos).distance) {
 					targetDistance = data.get(leftPos).distance;
 					targetPos = leftPos;
 				}
-				if (rightPos < size && targetDistance > data.get(rightPos).distance)
+				if (rightPos < cursor && targetDistance > data.get(rightPos).distance)
 					targetPos = rightPos;
 			}
 			if (targetPos != -1) {
@@ -69,12 +83,17 @@ public class WordLadderII {
 
 	}
 
-	private class Node implements Comparable<Node> {
+	private class Node {
 		String word;
 		int distance;
 		int id;
-		List<Integer> last;
+		List<Node> last;
 		List<Node> neighbor;
+
+		@Override
+		public String toString() {
+			return word + ": " +word + "(" + distance + ")";
+		}
 
 		Node(int id, int distance, String word) {
 			this.word = word;
@@ -85,37 +104,32 @@ public class WordLadderII {
 		}
 
 		Node(int id, String word) {
-			this(id, Integer.MAX_VALUE, word);
+			this(id, Integer.MAX_VALUE-1, word);
 		}
 
-		boolean update(int lastId, int newDistance) {
+		boolean update(Node lastNode) {
+			int newDistance = lastNode.distance+1;
 			if (newDistance < distance) {
+				distance = newDistance;
 				last.clear();
-				last.add(lastId);
+				last.add(lastNode);
+				return true;
 			} else if (newDistance == distance) {
-				last.add(lastId);
-			} else {
-				return false;
+				last.add(lastNode);
 			}
-			return true;
+			return false;
 		}
 
-		@Override
-		public int compareTo(Node o) {
-			return distance - o.distance;
-		}
-
-		@Override
-		public boolean equals(Object obj) {
-			Node other = (Node)obj;
-			return id == other.id;
-		}
-
-		@Override
-		public int hashCode() {
-			return Integer.hashCode(id);
-		}
 	}
+
+//	void printGraph(List<Node> graphs) {
+//		for (Node matrix : graphs) {
+//			System.out.println(matrix.word);
+//			for (Node nei: matrix.neighbor) {
+//				System.out.println("\t" + nei.word);
+//			}
+//		}
+//	}
 
 	private boolean isClosed(Node firstNode, Node secondNode) {
 		String first = firstNode.word;
@@ -130,11 +144,6 @@ public class WordLadderII {
 			}
 		return true;
 	}
-
-	private List<Integer> beginDistance = new ArrayList<>();
-	private List<Integer> endDistance = new ArrayList<>();
-	private HashMap<String, Integer> ids = new HashMap<>();
-	private List<List<Integer>> lists = new ArrayList<>();
 
 	public List<List<String>> findLadders(String beginWord, String endWord, List<String> wordList) {
 
@@ -164,12 +173,46 @@ public class WordLadderII {
 					graphMap.get(j).neighbor.add(graphMap.get(i));
 				}
 
-		return null;
+		dijkstra(graphMap, beginId);
+
+		List<List<String>> result = new ArrayList<>();
+
+		if (graphMap.get(endId).distance != Integer.MAX_VALUE - 1) {
+			Stack<Node> init = new Stack<>();
+			init.push(graphMap.get(endId));
+			PriorityQueue<Stack<Node>> tmp = new PriorityQueue<>();
+			tmp.offer(init);
+			while (!tmp.isEmpty()) {
+				Stack<Node> stack = tmp.poll();
+				List<Node> lasts = stack.peek().last;
+				for (Node node: lasts) {
+//					(Stack<Node>)stack.clone()).push(node)
+				}
+			}
+
+		}
+
+		return result;
 	}
 
 	public void dijkstra(List<Node> graph, int startId) {
-		PriorityQueue<Node> queue = new PriorityQueue<>();
-		queue.offer(graph.get(startId));
+		Heap heap = new Heap();
+		heap.update(graph.get(startId));
+		while (heap.notEmpty()) {
+			Node top = heap.take();
+			for (Node node : top.neighbor) {
+				if (node.update(top)) {
+					heap.update(node);
+				}
+			}
+		}
+	}
+
+	public static void main(String[] args) {
+		String beginWord = "hit";
+		String endWord = "cog";
+		String[] wordList = {"hot","dot","dog","lot","log","cog"};
+		new WordLadderII().findLadders(beginWord, endWord, Arrays.asList(wordList));
 	}
 
 }
